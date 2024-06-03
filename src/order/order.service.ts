@@ -1,16 +1,26 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose'
 import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderDto } from './dto/update-order.dto';
 import { Order} from './schemas/order.schema'
+import { ClientProxy, EventPattern } from '@nestjs/microservices';
+import { lastValueFrom } from 'rxjs';
 
 @Injectable()
 export class OrderService {
-  constructor (@InjectModel(Order.name) private orderModel: Model<Order>) {}
-  async create(createOrderDto: CreateOrderDto): Promise<Order> {
-    const newOrder = new this.orderModel(createOrderDto);
-    return newOrder.save();
+  constructor (
+    @InjectModel(Order.name) private orderModel: Model<Order>,
+    @Inject('PIZZA_SERVICE') private readonly pizzaServiceClient: ClientProxy,
+  ) {}
+  
+  async create(createOrderDto: CreateOrderDto): Promise<Object> {
+    const result = await lastValueFrom(this.pizzaServiceClient.send('order_process', createOrderDto));
+    if (result.status === 'accepted') {
+      const newOrder = new this.orderModel(createOrderDto);
+      newOrder.save();
+    }
+    return result;
   }
 
   async findAll(): Promise<Order[]> {
