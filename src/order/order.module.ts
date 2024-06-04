@@ -4,11 +4,12 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { OrderService } from './order.service';
 import { OrderController } from './order.controller';
 import { Order, OrderSchema } from './schemas/order.schema';
+import { DataCollection, DataCollectionSchema } from './schemas/collection.schema';
 import { OrderGateway } from './order.gateway';
 
 @Module({
   imports: [
-    MongooseModule.forFeature([{name: Order.name, schema: OrderSchema}]),
+    MongooseModule.forFeature([{name: Order.name, schema: OrderSchema}, {name: DataCollection.name, schema: DataCollectionSchema}]),
     ClientsModule.register([
       {
         name: 'PIZZA_SERVICE',
