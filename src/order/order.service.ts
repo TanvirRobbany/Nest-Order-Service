@@ -4,14 +4,16 @@ import { Model } from 'mongoose'
 import { CreateOrderDto } from './dto/create-order.dto';
 import { UpdateOrderDto } from './dto/update-order.dto';
 import { Order} from './schemas/order.schema'
-import { ClientProxy, EventPattern } from '@nestjs/microservices';
+import { ClientProxy } from '@nestjs/microservices';
 import { lastValueFrom } from 'rxjs';
+import { OrderGateway } from './order.gateway';
 
 @Injectable()
 export class OrderService {
   constructor (
     @InjectModel(Order.name) private orderModel: Model<Order>,
     @Inject('PIZZA_SERVICE') private readonly pizzaServiceClient: ClientProxy,
+    private readonly orderGateway: OrderGateway,
   ) {}
   
   async create(createOrderDto: CreateOrderDto): Promise<Object> {
@@ -20,6 +22,9 @@ export class OrderService {
       const newOrder = new this.orderModel(createOrderDto);
       newOrder.save();
     }
+
+    this.orderGateway.sendOrderStatus(result);
+    
     return result;
   }
 
